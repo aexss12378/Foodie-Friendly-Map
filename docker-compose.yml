@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: id20869490_kilk_database  # 這是你要使用的資料庫名稱
+      MYSQL_USER: id20869490_root           # 新增用戶
+      MYSQL_PASSWORD: A1103316_a             # 新增用戶的密碼
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql  
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"  # 將 phpMyAdmin 的 80 端口映射到主機的 8081 端口
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
