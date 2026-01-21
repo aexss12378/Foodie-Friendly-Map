@@ -73,9 +73,9 @@
                         inner join categories c on t.topic_cat = c.cat_id
                         left join posts p on p.post_topic = t.topic_id
                         where t.topic_cat = ?
-                        group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                                 u.userImg, u.idUsers, u.uidUsers, c.cat_name
+                        group by t.topic_id
                         order by t.topic_id asc";
+                
                 $stmt = mysqli_stmt_init($conn);  
                 
                 if (!mysqli_stmt_prepare($stmt, $sql))
