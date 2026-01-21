@@ -295,8 +295,7 @@
                                                 inner join users u on t.topic_by = u.idUsers
                                                 inner join categories c on t.topic_cat = c.cat_id
                                                 left join posts p on p.post_topic = t.topic_id
-                                                group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, t.topic_img, 
-                                                         u.userImg, u.idUsers, u.uidUsers, c.cat_name
+                                                group by t.topic_id
                                                 order by t.topic_id desc, upvotes asc 
                                                 LIMIT 20";
                                         $stmt = mysqli_stmt_init($conn);    

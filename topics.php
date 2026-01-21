@@ -24,6 +24,12 @@
         
             if(isset($_GET['cat']))
             {
+                // Validate that cat is numeric
+                $cat_id = filter_var($_GET['cat'], FILTER_VALIDATE_INT);
+                if ($cat_id === false) {
+                    die('Invalid category ID');
+                }
+                
                 $sql = "select * from categories "
                         . "where cat_id = ?";
                 
@@ -35,7 +41,7 @@
                 }
                 else
                 {
-                    mysqli_stmt_bind_param($stmt, "s", $_GET['cat']);
+                    mysqli_stmt_bind_param($stmt, "i", $cat_id);
                     mysqli_stmt_execute($stmt);
                     $result = mysqli_stmt_get_result($stmt);
 
@@ -62,56 +68,43 @@
           </h5>
         
         <?php
+            // Build base SQL query
+            $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                    u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
+                    COALESCE(SUM(p.post_votes), 0) as upvotes
+                    from topics t
+                    inner join users u on t.topic_by = u.idUsers
+                    inner join categories c on t.topic_cat = c.cat_id
+                    left join posts p on p.post_topic = t.topic_id";
             
+            // Add WHERE clause if category is specified
             if(isset($_GET['cat']))
             {
-                $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                        u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
-                        COALESCE(SUM(p.post_votes), 0) as upvotes
-                        from topics t
-                        inner join users u on t.topic_by = u.idUsers
-                        inner join categories c on t.topic_cat = c.cat_id
-                        left join posts p on p.post_topic = t.topic_id
-                        where t.topic_cat = ?
-                        group by t.topic_id
-                        order by t.topic_id asc";
-                
-                $stmt = mysqli_stmt_init($conn);  
-                
-                if (!mysqli_stmt_prepare($stmt, $sql))
-                {
-                    die('SQL error');
-                }
-                else
-                {
-                    mysqli_stmt_bind_param($stmt, "s", $_GET['cat']);
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-                }
+                $sql .= " where t.topic_cat = ?";
+            }
+            
+            $sql .= " group by t.topic_id
+                    order by t.topic_id asc";
+            
+            $stmt = mysqli_stmt_init($conn);  
+            
+            if (!mysqli_stmt_prepare($stmt, $sql))
+            {
+                die('SQL error');
             }
             else
             {
-                $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                        u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
-                        COALESCE(SUM(p.post_votes), 0) as upvotes
-                        from topics t
-                        inner join users u on t.topic_by = u.idUsers
-                        inner join categories c on t.topic_cat = c.cat_id
-                        left join posts p on p.post_topic = t.topic_id
-                        group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                                 u.userImg, u.idUsers, u.uidUsers, c.cat_name
-                        order by t.topic_id asc";
-                $stmt = mysqli_stmt_init($conn);  
-                
-                if (!mysqli_stmt_prepare($stmt, $sql))
+                if(isset($_GET['cat']))
                 {
-                    die('SQL error');
+                    // Validate that cat is numeric and use integer binding
+                    $cat_id = filter_var($_GET['cat'], FILTER_VALIDATE_INT);
+                    if ($cat_id === false) {
+                        die('Invalid category ID');
+                    }
+                    mysqli_stmt_bind_param($stmt, "i", $cat_id);
                 }
-                else
-                {
-                    mysqli_stmt_execute($stmt);
-                    $result = mysqli_stmt_get_result($stmt);
-                }
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
             }
             
             if (isset($result))
