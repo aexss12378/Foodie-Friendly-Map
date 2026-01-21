@@ -288,15 +288,15 @@
 
                                 <div class="row mb-2" id="1">
                                     <?php
-                                        $sql = "select topic_id, topic_subject, topic_date, topic_cat, topic_by,topic_img, userImg, idUsers, uidUsers, cat_name, (
-                                                    select sum(post_votes)
-                                                    from posts
-                                                    where post_topic = topic_id
-                                                    ) as upvotes
-                                                from topics, users, categories 
-                                                where topics.topic_by = users.idUsers
-                                                and topics.topic_cat = categories.cat_id
-                                                order by topic_id desc, upvotes asc 
+                                        $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, t.topic_img, 
+                                                u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
+                                                COALESCE(SUM(p.post_votes), 0) as upvotes
+                                                from topics t
+                                                inner join users u on t.topic_by = u.idUsers
+                                                inner join categories c on t.topic_cat = c.cat_id
+                                                left join posts p on p.post_topic = t.topic_id
+                                                group by t.topic_id
+                                                order by t.topic_id desc, upvotes asc 
                                                 LIMIT 20";
                                         $stmt = mysqli_stmt_init($conn);    
 

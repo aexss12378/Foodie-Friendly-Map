@@ -31,7 +31,7 @@ $(document).ready(function(){
     {
         //$(".display-message").load("includes/get_message_ajax.php?c_id="+c_id);
         $(".msg_history").load("includes/get_message_ajax.php?c_id="+c_id);
-    }, 500);
+    }, 2000);
  
     $(".msg_history").scrollTop($(".msg_history")[0].scrollHeight);
 });

@@ -94,6 +94,39 @@ if (!mysqli_stmt_prepare($stmt, $sql)) {
     <div class="col-sm-12">
 
         <?php
+        // First, get all votes for this user in this topic to avoid N+1 queries
+        $user_votes = array();
+        $sql_votes = "SELECT pv.votePost, pv.vote FROM postvotes pv "
+            . "INNER JOIN posts p ON pv.votePost = p.post_id "
+            . "WHERE p.post_topic=? AND pv.voteBy=?";
+        $stmt_votes = mysqli_stmt_init($conn);
+        
+        if (!mysqli_stmt_prepare($stmt_votes, $sql_votes)) {
+            // If vote query fails, log the error and show a user-friendly message
+            error_log('SQL error preparing vote data statement: ' . mysqli_error($conn));
+            echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+            exit();
+        } else {
+            mysqli_stmt_bind_param($stmt_votes, "ss", $topic, $_SESSION['userId']);
+            if (!mysqli_stmt_execute($stmt_votes)) {
+                // Execution of the vote query failed
+                error_log('SQL error executing vote data statement: ' . mysqli_error($conn));
+                echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+                exit();
+            }
+            $votes_result = mysqli_stmt_get_result($stmt_votes);
+            if ($votes_result === false) {
+                // Fetching vote query results failed
+                error_log('SQL error fetching vote data result set: ' . mysqli_error($conn));
+                echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+                exit();
+            }
+            
+            while ($vote_row = mysqli_fetch_assoc($votes_result)) {
+                $user_votes[$vote_row['votePost']] = $vote_row['vote'];
+            }
+        }
+        
         $sql = "SELECT * FROM posts p, users u "
             . "WHERE p.post_topic=? AND p.post_by=u.idUsers "
             . "ORDER BY p.post_id";
@@ -112,40 +145,17 @@ if (!mysqli_stmt_prepare($stmt, $sql)) {
                 $voted_u = false;
                 $voted_d = false;
 
-                $sql = "SELECT votePost, voteBy, vote FROM postvotes "
-                    . "WHERE votePost=? AND voteBy=? AND vote=1";
-                $stmt = mysqli_stmt_init($conn);
-
-                if (!mysqli_stmt_prepare($stmt, $sql)) {
-
-                    die('SQL error');
-                } else {
-                    mysqli_stmt_bind_param($stmt, "ss", $row['post_id'], $_SESSION['userId']);
-                    mysqli_stmt_execute($stmt);
-                    mysqli_stmt_store_result($stmt);
-
-                    $resultCheck = mysqli_stmt_num_rows($stmt);
-
-                    if ($resultCheck == 0) {
-                        $voted_u = true;
-                    }
-                }
-
-                $sql = "SELECT votePost, voteBy, vote FROM postvotes "
-                    . "WHERE votePost=? AND voteBy=? AND vote=-1";
-                $stmt = mysqli_stmt_init($conn);
-                if (!mysqli_stmt_prepare($stmt, $sql)) {
-                    die('SQL error');
-                } else {
-                    mysqli_stmt_bind_param($stmt, "ss", $row['post_id'], $_SESSION['userId']);
-                    mysqli_stmt_execute($stmt);
-                    mysqli_stmt_store_result($stmt);
-
-                    $resultCheck = mysqli_stmt_num_rows($stmt);
-
-                    if ($resultCheck == 0) {
-                        $voted_d = true;
-                    }
+                // Check if user has voted on this post using the pre-fetched data
+                if (!isset($user_votes[$row['post_id']])) {
+                    // User hasn't voted on this post
+                    $voted_u = true;
+                    $voted_d = true;
+                } else if ($user_votes[$row['post_id']] == 1) {
+                    // User has upvoted
+                    $voted_d = true;
+                } else if ($user_votes[$row['post_id']] == -1) {
+                    // User has downvoted
+                    $voted_u = true;
                 }
 
                 echo '<div class="card post">  
