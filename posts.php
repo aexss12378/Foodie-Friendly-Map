@@ -101,7 +101,10 @@ if (!mysqli_stmt_prepare($stmt, $sql)) {
             . "WHERE p.post_topic=? AND pv.voteBy=?";
         $stmt_votes = mysqli_stmt_init($conn);
         
-        if (mysqli_stmt_prepare($stmt_votes, $sql_votes)) {
+        if (!mysqli_stmt_prepare($stmt_votes, $sql_votes)) {
+            // If vote query fails, continue but log the error
+            error_log('SQL error fetching vote data: ' . mysqli_error($conn));
+        } else {
             mysqli_stmt_bind_param($stmt_votes, "ss", $topic, $_SESSION['userId']);
             mysqli_stmt_execute($stmt_votes);
             $votes_result = mysqli_stmt_get_result($stmt_votes);

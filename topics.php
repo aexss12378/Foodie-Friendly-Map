@@ -62,36 +62,60 @@
           </h5>
         
         <?php
-
-            $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                    u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
-                    COALESCE(SUM(p.post_votes), 0) as upvotes
-                    from topics t
-                    inner join users u on t.topic_by = u.idUsers
-                    inner join categories c on t.topic_cat = c.cat_id
-                    left join posts p on p.post_topic = t.topic_id
-                    where ";
             
             if(isset($_GET['cat']))
             {
-                $sql .= "t.topic_cat = " . $_GET['cat'] . " and ";
-            }
-            
-            $sql .= "1=1
-                    group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
-                             u.userImg, u.idUsers, u.uidUsers, c.cat_name
-                    order by t.topic_id asc ";
-            $stmt = mysqli_stmt_init($conn);  
-            
-            if (!mysqli_stmt_prepare($stmt, $sql))
-            {
-                die('SQL error');
+                $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                        u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
+                        COALESCE(SUM(p.post_votes), 0) as upvotes
+                        from topics t
+                        inner join users u on t.topic_by = u.idUsers
+                        inner join categories c on t.topic_cat = c.cat_id
+                        left join posts p on p.post_topic = t.topic_id
+                        where t.topic_cat = ?
+                        group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                                 u.userImg, u.idUsers, u.uidUsers, c.cat_name
+                        order by t.topic_id asc";
+                $stmt = mysqli_stmt_init($conn);  
+                
+                if (!mysqli_stmt_prepare($stmt, $sql))
+                {
+                    die('SQL error');
+                }
+                else
+                {
+                    mysqli_stmt_bind_param($stmt, "s", $_GET['cat']);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
+                }
             }
             else
             {
-                mysqli_stmt_execute($stmt);
-                $result = mysqli_stmt_get_result($stmt);
-
+                $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                        u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
+                        COALESCE(SUM(p.post_votes), 0) as upvotes
+                        from topics t
+                        inner join users u on t.topic_by = u.idUsers
+                        inner join categories c on t.topic_cat = c.cat_id
+                        left join posts p on p.post_topic = t.topic_id
+                        group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                                 u.userImg, u.idUsers, u.uidUsers, c.cat_name
+                        order by t.topic_id asc";
+                $stmt = mysqli_stmt_init($conn);  
+                
+                if (!mysqli_stmt_prepare($stmt, $sql))
+                {
+                    die('SQL error');
+                }
+                else
+                {
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
+                }
+            }
+            
+            if (isset($result))
+            {
                 while ($row = mysqli_fetch_assoc($result))
                 {
                     
