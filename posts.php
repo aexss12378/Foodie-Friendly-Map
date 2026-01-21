@@ -102,12 +102,25 @@ if (!mysqli_stmt_prepare($stmt, $sql)) {
         $stmt_votes = mysqli_stmt_init($conn);
         
         if (!mysqli_stmt_prepare($stmt_votes, $sql_votes)) {
-            // If vote query fails, continue but log the error
-            error_log('SQL error fetching vote data: ' . mysqli_error($conn));
+            // If vote query fails, log the error and show a user-friendly message
+            error_log('SQL error preparing vote data statement: ' . mysqli_error($conn));
+            echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+            exit();
         } else {
             mysqli_stmt_bind_param($stmt_votes, "ss", $topic, $_SESSION['userId']);
-            mysqli_stmt_execute($stmt_votes);
+            if (!mysqli_stmt_execute($stmt_votes)) {
+                // Execution of the vote query failed
+                error_log('SQL error executing vote data statement: ' . mysqli_error($conn));
+                echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+                exit();
+            }
             $votes_result = mysqli_stmt_get_result($stmt_votes);
+            if ($votes_result === false) {
+                // Fetching vote query results failed
+                error_log('SQL error fetching vote data result set: ' . mysqli_error($conn));
+                echo '<div class="alert alert-danger" role="alert">Sorry, we are unable to load vote information right now. Please try again later.</div>';
+                exit();
+            }
             
             while ($vote_row = mysqli_fetch_assoc($votes_result)) {
                 $user_votes[$vote_row['votePost']] = $vote_row['vote'];
