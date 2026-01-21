@@ -31,12 +31,12 @@
         
         <?php
 
-            $sql = "select cat_id, cat_name, cat_description, (
-                        select count(*) from topics
-                        where topics.topic_cat = cat_id
-                        ) as forums
-                    from categories
-                    order by cat_id asc";
+            $sql = "select c.cat_id, c.cat_name, c.cat_description, 
+                    COUNT(t.topic_id) as forums
+                    from categories c
+                    left join topics t on t.topic_cat = c.cat_id
+                    group by c.cat_id, c.cat_name, c.cat_description
+                    order by c.cat_id asc";
             
             $stmt = mysqli_stmt_init($conn);    
 

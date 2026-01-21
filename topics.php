@@ -63,22 +63,24 @@
         
         <?php
 
-            $sql = "select topic_id, topic_subject, topic_date, topic_cat, topic_by, userImg, idUsers, uidUsers, cat_name, (
-                            select sum(post_votes)
-                        from posts
-                        where post_topic = topic_id
-                        ) as upvotes
-                    from topics, users, categories 
+            $sql = "select t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                    u.userImg, u.idUsers, u.uidUsers, c.cat_name, 
+                    COALESCE(SUM(p.post_votes), 0) as upvotes
+                    from topics t
+                    inner join users u on t.topic_by = u.idUsers
+                    inner join categories c on t.topic_cat = c.cat_id
+                    left join posts p on p.post_topic = t.topic_id
                     where ";
             
             if(isset($_GET['cat']))
             {
-                $sql .= "topic_cat = " . $_GET['cat'] . " and ";
+                $sql .= "t.topic_cat = " . $_GET['cat'] . " and ";
             }
             
-            $sql .= "topics.topic_by = users.idUsers
-                    and topics.topic_cat = categories.cat_id
-                    order by topic_id asc ";
+            $sql .= "1=1
+                    group by t.topic_id, t.topic_subject, t.topic_date, t.topic_cat, t.topic_by, 
+                             u.userImg, u.idUsers, u.uidUsers, c.cat_name
+                    order by t.topic_id asc ";
             $stmt = mysqli_stmt_init($conn);  
             
             if (!mysqli_stmt_prepare($stmt, $sql))
