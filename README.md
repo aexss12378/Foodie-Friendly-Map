@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Foodie-Friendly-Map
 =======
 <p align="center">
